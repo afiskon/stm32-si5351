@@ -169,7 +169,7 @@ void si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStreng
         P3 = denom;
     }
 
-    // Get the appropriate starting point for the PLL registers
+    // Get the appropriate base address for the MS registers
     uint8_t baseaddr = 0;
     switch (output) {
     case 0:
