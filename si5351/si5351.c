@@ -104,7 +104,7 @@ int32_t si5351Correction;
 // Initializes Si5351. Call this function before doing anything else.
 // `Correction` is the difference of actual frequency an desired frequency @ 100 Megs.
 // It can be measured at lower frequencies and scaled linearly.
-// E.g. if you get 10_000_97 Hz instead of 10_000_000 Hz, `correction` is 97*10 = 970
+// E.g. if you get 10_000_097 Hz instead of 10_000_000 Hz, `correction` is 97*10 = 970
 void si5351_Init(int32_t correction) {
     si5351Correction = correction;
 
