@@ -25,10 +25,11 @@ Advanced interface:
 ```
 si5351PLLConfig_t pll_conf;
 si5351OutputConfig_t out_conf;
+int32_t Fclk = 7000000; // 7 MHz
 
 si5351_Calc(Fclk, &pll_conf, &out_conf);
 si5351_SetupPLL(SI5351_PLL_A, &pll_conf);
-si5351_SetupOutput(0, SI5351_PLL_A, driveStrength, &out_conf);
+si5351_SetupOutput(0, SI5351_PLL_A, SI5351_DRIVE_STRENGTH_4MA, &out_conf);
 ```
 
 More comments are in the code. See also examples/ directory.
