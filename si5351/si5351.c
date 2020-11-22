@@ -295,7 +295,7 @@ void si5351_SetupCLK0(int32_t Fclk, si5351DriveStrength_t driveStrength) {
 	si5351_SetupOutput(0, SI5351_PLL_A, driveStrength, &out_conf);
 }
 
-// Setup CLK1 for given frequency and drive strength. Use PLLB.
+// Setup CLK2 for given frequency and drive strength. Use PLLB.
 void si5351_SetupCLK2(int32_t Fclk, si5351DriveStrength_t driveStrength) {
 	si5351PLLConfig_t pll_conf;
 	si5351OutputConfig_t out_conf;
