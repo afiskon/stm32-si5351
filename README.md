@@ -30,6 +30,7 @@ int32_t Fclk = 7000000; // 7 MHz
 si5351_Calc(Fclk, &pll_conf, &out_conf);
 si5351_SetupPLL(SI5351_PLL_A, &pll_conf);
 si5351_SetupOutput(0, SI5351_PLL_A, SI5351_DRIVE_STRENGTH_4MA, &out_conf);
+si5351_EnableOutputs(1<<0);
 ```
 
 More comments are in the code. See also examples/ directory.
