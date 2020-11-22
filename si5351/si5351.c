@@ -186,7 +186,7 @@ void si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStreng
     si5351_writeBulk(baseaddr, P1, P2, P3, divBy4, conf->rdiv);
 
     // Configure the clk control and enable the output
-    uint8_t clkControlReg = 0x0C | driveStrength; // MS0 as CLK0 source, Clock not inverted, powered up
+    uint8_t clkControlReg = 0x0C | driveStrength; // clock not inverted, powered up
 
     if(pllSource == SI5351_PLL_B) {
         clkControlReg |= (1 << 5); // Uses PLLB
