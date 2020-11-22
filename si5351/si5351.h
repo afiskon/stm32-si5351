@@ -43,7 +43,7 @@ typedef struct {
 // can be changed independelty. If you also need CLK1 one PLL should
 // be shared between two CLKx and things get a little more complicated.
 // CLK0 and CLK2 were chosen because they are distant from each other on a common
-// Si5351 module, which is a little more convenient than using CLK0 and CLK1.
+// Si5351 module which makes using them a little more convenient than CLK0 and CLK1.
 void si5351_Init(int32_t correction);
 void si5351_SetupCLK0(int32_t Fclk, si5351DriveStrength_t driveStrength);
 void si5351_SetupCLK2(int32_t Fclk, si5351DriveStrength_t driveStrength);
