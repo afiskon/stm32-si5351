@@ -23,6 +23,9 @@ si5351_EnableOutputs((1<<0) | (1<<2));
 Advanced interface:
 
 ```
+const int32_t correction = 978;
+si5351_Init(correction);
+
 si5351PLLConfig_t pll_conf;
 si5351OutputConfig_t out_conf;
 int32_t Fclk = 7000000; // 7 MHz
