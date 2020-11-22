@@ -13,7 +13,7 @@ si5351_Init(correction);
 // 28 MHz @ ~7 dBm
 si5351_SetupCLK0(28000000, SI5351_DRIVE_STRENGTH_4MA);
 
-// 144 Mhz @ ~7 dBm
+// 144 MHz @ ~7 dBm
 si5351_SetupCLK2(144000000, SI5351_DRIVE_STRENGTH_4MA);
 
 // Enable CLK0 and CLK2
