@@ -139,7 +139,7 @@ void si5351_SetupPLL(si5351PLL_t pll, si5351PLLConfig_t* conf) {
     P2 = (128 * num) % denom;
     P3 = denom;
 
-    // Get the appropriate starting point for the PLL registers
+    // Get the appropriate base address for the PLL registers
     uint8_t baseaddr = (pll == SI5351_PLL_A ? 26 : 34);
     si5351_writeBulk(baseaddr, P1, P2, P3, 0, 0);
 
