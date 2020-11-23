@@ -214,7 +214,7 @@ void si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStreng
 void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t* out_conf) {
     if(Fclk < 1000000) {
         // For frequencies in [8_000, 500_000] range we can use si5351_Calc(Fclk*64, ...) and SI5351_R_DIV_64.
-        // In practice it's worth doing for any freqyency below 1 Meg, since it reduces the error.
+        // In practice it's worth doing for any frequency below 1 Meg, since it reduces the error.
         Fclk *= 64;
         out_conf->rdiv = SI5351_R_DIV_64;
     } else {
