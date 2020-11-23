@@ -1,8 +1,8 @@
 # stm32-si5351
 
-HAL-based Si5351A driver for STM32.
+HAL-based Si5351 driver for STM32.
 
-Si5351A is a I2C-programmable 8 kHz - 160 MHz clock generator made by Silicon Labs. It has 3 clock outputs. The signal level can be changed in ~2-11 dBm range.
+Si5351 is a I2C-programmable 8 kHz - 160 MHz clock generator made by Silicon Labs. It has 3+ clock outputs depending on modification. The signal level can be changed in ~2-11 dBm range.
 
 Basic interface:
 
