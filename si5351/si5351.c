@@ -212,6 +212,9 @@ void si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStreng
 // Calculates PLL, MS and RDiv settings for given Fclk in [8_000, 160_000_000] range.
 // The actual frequency will differ less than 6 Hz from given Fclk, assuming `correction` is righ.
 void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t* out_conf) {
+    if(Fclk < 8000) Fclk = 8000;
+    if(Fclk > 160000000) Fclk = 160000000;
+
     if(Fclk < 1000000) {
         // For frequencies in [8_000, 500_000] range we can use si5351_Calc(Fclk*64, ...) and SI5351_R_DIV_64.
         // In practice it's worth doing for any frequency below 1 Meg, since it reduces the error.
