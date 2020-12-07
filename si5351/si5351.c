@@ -2,7 +2,6 @@
 
 // change for your chip
 #include "stm32f1xx_hal.h"
-#include <math.h>
 #include <si5351.h>
 
 // change if necessary
