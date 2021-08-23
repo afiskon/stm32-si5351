@@ -148,12 +148,21 @@ void si5351_SetupPLL(si5351PLL_t pll, si5351PLLConfig_t* conf) {
 
 // Configures PLL source, drive strength, multisynth divider and Rdivider. See AN619.
 // Make sure provided PLL was initialized beforehand.
-void si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrength_t driveStrength, si5351OutputConfig_t* conf) {
+// Phase offset other than 180 degree can be used only for
+// frequencies < 81 Mhz (< 112.5 MHz if you patch si5351_Calc(), see the comments).
+// Returns 0 on success, != 0 otherwise.
+int si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrength_t driveStrength, si5351OutputConfig_t* conf, uint8_t phaseOffset) {
     int32_t div = conf->div;
     int32_t num = conf->num;
     int32_t denom = conf->denom;
     uint8_t divBy4 = 0;
     int32_t P1, P2, P3; // Multisynth config registers
+
+    if((phaseOffset != 0) && ((div < 8) || ((div == 8) && (num == 0)))) {
+        // User tries to use phaseOffset with an integer divider in {4, 6, 8}
+        // which is not supported by Si5351
+        return 1;
+    }
 
     if(div == 4) {
         // special DIVBY4 case, see AN619 4.1.3
@@ -170,46 +179,47 @@ void si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStreng
 
     // Get the appropriate base address for the MS registers
     uint8_t baseaddr = 0;
+    uint8_t phaseOffsetRegister = 0;
+    uint8_t clkControlRegister = 0;
     switch (output) {
     case 0:
         baseaddr = SI5351_REGISTER_42_MULTISYNTH0_PARAMETERS_1;
+        phaseOffsetRegister = SI5351_REGISTER_165_CLK0_INITIAL_PHASE_OFFSET;
+        clkControlRegister = SI5351_REGISTER_16_CLK0_CONTROL;
         break;
     case 1:
         baseaddr = SI5351_REGISTER_50_MULTISYNTH1_PARAMETERS_1;
+        phaseOffsetRegister = SI5351_REGISTER_166_CLK1_INITIAL_PHASE_OFFSET;
+        clkControlRegister = SI5351_REGISTER_17_CLK1_CONTROL;
         break;
     case 2:
         baseaddr = SI5351_REGISTER_58_MULTISYNTH2_PARAMETERS_1;
+        phaseOffsetRegister = SI5351_REGISTER_167_CLK2_INITIAL_PHASE_OFFSET;
+        clkControlRegister = SI5351_REGISTER_18_CLK2_CONTROL;
         break;
     }
 
+    si5351_write(phaseOffsetRegister, phaseOffset);
     si5351_writeBulk(baseaddr, P1, P2, P3, divBy4, conf->rdiv);
 
     // Configure the clk control and enable the output
-    uint8_t clkControlReg = 0x0C | driveStrength; // clock not inverted, powered up
-
+    uint8_t clkControl = 0x0C | driveStrength; // clock not inverted, powered up
     if(pllSource == SI5351_PLL_B) {
-        clkControlReg |= (1 << 5); // Uses PLLB
+        clkControl |= (1 << 5); // Uses PLLB
     }
 
-    if((num == 0)||(div == 4)) {
-        clkControlReg |= (1 << 6); // Integer mode
+    // integer mode can't be used with phase offset
+    if((phaseOffset == 0) && ((num == 0)||(div == 4))) {
+        // use integer mode
+        clkControl |= (1 << 6);
     }
 
-    switch (output) {
-    case 0:
-        si5351_write(SI5351_REGISTER_16_CLK0_CONTROL, clkControlReg);
-        break;
-    case 1:
-        si5351_write(SI5351_REGISTER_17_CLK1_CONTROL, clkControlReg);
-        break;
-    case 2:
-        si5351_write(SI5351_REGISTER_18_CLK2_CONTROL, clkControlReg);
-        break;
-    }
+    si5351_write(clkControlRegister, clkControl);
+    return 0;
 }
 
 // Calculates PLL, MS and RDiv settings for given Fclk in [8_000, 160_000_000] range.
-// The actual frequency will differ less than 6 Hz from given Fclk, assuming `correction` is righ.
+// The actual frequency will differ less than 6 Hz from given Fclk, assuming `correction` is right.
 void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t* out_conf) {
     if(Fclk < 8000) Fclk = 8000;
     if(Fclk > 160000000) Fclk = 160000000;
@@ -294,7 +304,8 @@ void si5351_SetupCLK0(int32_t Fclk, si5351DriveStrength_t driveStrength) {
 
 	si5351_Calc(Fclk, &pll_conf, &out_conf);
 	si5351_SetupPLL(SI5351_PLL_A, &pll_conf);
-	si5351_SetupOutput(0, SI5351_PLL_A, driveStrength, &out_conf);
+    // _SetupOutput() can't fail unless phase shift is specified
+	si5351_SetupOutput(0, SI5351_PLL_A, driveStrength, &out_conf, 0);
 }
 
 // Setup CLK2 for given frequency and drive strength. Use PLLB.
@@ -304,10 +315,11 @@ void si5351_SetupCLK2(int32_t Fclk, si5351DriveStrength_t driveStrength) {
 
 	si5351_Calc(Fclk, &pll_conf, &out_conf);
 	si5351_SetupPLL(SI5351_PLL_B, &pll_conf);
-	si5351_SetupOutput(2, SI5351_PLL_B, driveStrength, &out_conf);
+    // _SetupOutput() can't fail unless phase shift is specified
+	si5351_SetupOutput(2, SI5351_PLL_B, driveStrength, &out_conf, 0);
 }
 
-// Enables or disables outputs depending on probided bitmask.
+// Enables or disables outputs depending on provided bitmask.
 // Examples:
 // si5351_EnableOutputs(1 << 0) enables CLK0 and disables CLK1 and CLK2
 // si5351_EnableOutputs((1 << 2) | (1 << 0)) enables CLK0 and CLK2 and disables CLK1

@@ -56,6 +56,6 @@ void si5351_EnableOutputs(uint8_t enabled);
 // however this will increase the worse case calculation error to 13 Hz.
 void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t* out_conf);
 void si5351_SetupPLL(si5351PLL_t pll, si5351PLLConfig_t* conf);
-void si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrength_t driveStength, si5351OutputConfig_t* conf);
+int si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrength_t driveStength, si5351OutputConfig_t* conf, uint8_t phaseOffset);
 
 #endif

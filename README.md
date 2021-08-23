@@ -32,7 +32,20 @@ int32_t Fclk = 7000000; // 7 MHz
 
 si5351_Calc(Fclk, &pll_conf, &out_conf);
 si5351_SetupPLL(SI5351_PLL_A, &pll_conf);
-si5351_SetupOutput(0, SI5351_PLL_A, SI5351_DRIVE_STRENGTH_4MA, &out_conf);
+
+/*
+ * `phaseOffset` is a 7bit value, calculated from Fpll, Fclk and desired phase offset.
+ * To get N degree phase offset the value should be round( (N/360)*(4*Fpll/Fclk) )
+ * Two channels should use the same PLL to make it work.
+ *
+ * There are other restrictions. Please see AN619 for more details.
+ */
+uint8_t phaseOffset = 0;
+if(si5351_SetupOutput(0, SI5351_PLL_A, SI5351_DRIVE_STRENGTH_4MA, &out_conf, phaseOffset) != 0) {
+	// wrong arguments! see comments
+	return 1;
+}
+
 si5351_EnableOutputs(1<<0);
 ```
 
