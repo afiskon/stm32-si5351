@@ -56,10 +56,8 @@ def si5351_iqmode(Fclk):
     return { 'pll': {'a': A, 'b': B, 'c': C}, 'ms': {'a': X, 'b': Y, 'c': Z}, 'rdiv': rdiv, 'freq': Fres, 'phoff' : PhOff}
 
 if __name__ == '__main__':
-    print(si5351_iqmode(3_560_000))
-    print(si5351_iqmode(7_030_000))
-    print(si5351_iqmode(14_060_000))
-    print(si5351_iqmode(28_060_000))
+    print(si5351_iqmode(55_360)) # phoff = 127, rdiv = 7
+    print(si5351_iqmode(13_846_150)) # phoff = 65, rdiv = 0
 
     step = 1
     max_err = 0
