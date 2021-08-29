@@ -147,9 +147,6 @@ void si5351_SetupPLL(si5351PLL_t pll, si5351PLLConfig_t* conf) {
 }
 
 // Configures PLL source, drive strength, multisynth divider and Rdivider. See AN619.
-// Make sure provided PLL was initialized beforehand.
-// Phase offset other than 180 degree can be used only for
-// frequencies < 81 Mhz (< 112.5 MHz if you patch si5351_Calc(), see the comments).
 // Returns 0 on success, != 0 otherwise.
 int si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrength_t driveStrength, si5351OutputConfig_t* conf, uint8_t phaseOffset) {
     int32_t div = conf->div;
