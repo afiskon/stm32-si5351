@@ -340,7 +340,6 @@ void si5351_SetupCLK0(int32_t Fclk, si5351DriveStrength_t driveStrength) {
 
 	si5351_Calc(Fclk, &pll_conf, &out_conf);
 	si5351_SetupPLL(SI5351_PLL_A, &pll_conf);
-    // _SetupOutput() can't fail unless phase shift is specified
 	si5351_SetupOutput(0, SI5351_PLL_A, driveStrength, &out_conf, 0);
 }
 
@@ -351,7 +350,6 @@ void si5351_SetupCLK2(int32_t Fclk, si5351DriveStrength_t driveStrength) {
 
 	si5351_Calc(Fclk, &pll_conf, &out_conf);
 	si5351_SetupPLL(SI5351_PLL_B, &pll_conf);
-    // _SetupOutput() can't fail unless phase shift is specified
 	si5351_SetupOutput(2, SI5351_PLL_B, driveStrength, &out_conf, 0);
 }
 
