@@ -7,31 +7,26 @@ import sys
 def si5351_iqmode(Fclk):
     # There are no solution above 100 MHz without using integer mode,
     # which is not supported when phase shift is enabled.
-    if Fclk < 55_000 or Fclk > 100_000_000:
+    if Fclk < 3_500_000 or Fclk >= 100_000_000:
         return None
 
+    # it's  impossible to get phase shift > 45° when RDivider is used
     rdiv = 0
-    if Fclk < 750_000:
-        Fclk *= 128
-        rdiv = 7
-    elif Fclk < 1_500_000:
-        Fclk *= 64
-        rdiv = 6
-    elif Fclk < 3_000_000:
-        Fclk *= 32
-        rdiv = 5
-    elif Fclk < 6_000_000:
-        Fclk *= 16
-        rdiv = 4
-    elif Fclk < 9_000_000: # actual threshold is ~7_050_000
-        Fclk *= 8
-        rdiv = 3
 
     Fxtal = 25_000_000
     Nmin, Nmax = 24, 36 # PLL should run between 600 Meg and 900 Meg
     Mmin, Mmax = 8, 1800
 
-    PhOff = floor(900_000_000 / Fclk)
+    dirty_hack = False
+    Fpll_estimate = 900_000_000
+    if Fclk < 4_900_000:
+        # dirty hack, run PLL below 600 MHz to cover 3.5 MHz .. 4.9 MHz range
+        dirty_hack = True
+        Fpll_estimate = 420_000_000
+    elif Fclk < 8_000_000: # will find a solution for Fclk in 4.9..8 MHz range
+        Fpll_estimate = 620_000_000
+
+    PhOff = floor(Fpll_estimate / Fclk)
     if PhOff > 127:
       print("Constraint violation: PhOff = {}".format(PhOff))
       return None
@@ -46,7 +41,7 @@ def si5351_iqmode(Fclk):
     Y = 0
     Z = 1
  
-    if A < Nmin or A > Nmax or X < Mmin or X > Mmax or (X == Mmin and Y == 0):
+    if (A < Nmin and not dirty_hack) or A > Nmax or X < Mmin or X > Mmax or (X == Mmin and Y == 0):
       print("Constraint violation: A = {}, X = {}, Y = {}".format(A, X, Y))
       return None
 
@@ -56,14 +51,11 @@ def si5351_iqmode(Fclk):
     return { 'pll': {'a': A, 'b': B, 'c': C}, 'ms': {'a': X, 'b': Y, 'c': Z}, 'rdiv': rdiv, 'freq': Fres, 'phoff' : PhOff}
 
 if __name__ == '__main__':
-    print(si5351_iqmode(55_360)) # phoff = 127, rdiv = 7
-    print(si5351_iqmode(13_846_150)) # phoff = 65, rdiv = 0
-
     step = 1
     max_err = 0
     min_phoff =  999
     max_phoff = -999
-    for Fclk in range(55_000, 100_000_000+1, step):
+    for Fclk in range(3_500_000, 100_000_000+1, step):
         if Fclk % 1_000_000 == 0:
             print("{}...".format(Fclk))
         result = si5351_iqmode(Fclk)

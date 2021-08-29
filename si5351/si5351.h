@@ -32,6 +32,7 @@ typedef struct {
 } si5351PLLConfig_t;
 
 typedef struct {
+    uint8_t allowIntegerMode;
     int32_t div;
     int32_t num;
     int32_t denom;
@@ -43,18 +44,28 @@ typedef struct {
 // can be changed independelty. If you also need CLK1 one PLL should
 // be shared between two CLKx and things get a little more complicated.
 // CLK0 and CLK2 were chosen because they are distant from each other on a common
-// Si5351 module which makes using them a little more convenient than CLK0 and CLK1.
+// Si5351 module. This makes using them a little more convenient than CLK0 and CLK1.
 void si5351_Init(int32_t correction);
 void si5351_SetupCLK0(int32_t Fclk, si5351DriveStrength_t driveStrength);
 void si5351_SetupCLK2(int32_t Fclk, si5351DriveStrength_t driveStrength);
 void si5351_EnableOutputs(uint8_t enabled);
 
-// Advanced interface. Use it if you need CLK0, CLK1 and CLK2 simultaneously.
-// You can use the knowlage that si5351_Calc always uses 900 Meg PLL for frequencies below 81 Megs.
-// This PLL can safely be shared between all CLKx that work @ <= 81 Megs.
-// You can also modify si5351.c to share one PLL for any frequencies <= 112.5 Megs,
+// Advanced interface. Use it if you need:
+//
+// a. CLK0, CLK1 and CLK2 simultaneously;
+// b. A phase shift 90° between two channels;
+//
+// si5351_Calc() always uses 900 MHz PLL for frequencies below 81 MHz.
+// This PLL can safely be shared between all CLKx that work @ <= 81 MHz.
+// You can also modify si5351.c to share one PLL for any frequencies <= 112.5 MHz,
 // however this will increase the worse case calculation error to 13 Hz.
 void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t* out_conf);
+
+// si5351_CalcIQ() finds PLL and MS parameters that give phase shift 90° between two channels,
+// if 0 and (uint8_t)out_conf.div are passed as phaseOffset for these channels. Channels should
+// use the same PLL to make it work. Fclk can be in 3.5 MHz .. 100 Mhz range.
+void si5351_CalcIQ(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t* out_conf);
+
 void si5351_SetupPLL(si5351PLL_t pll, si5351PLLConfig_t* conf);
 int si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrength_t driveStength, si5351OutputConfig_t* conf, uint8_t phaseOffset);
 

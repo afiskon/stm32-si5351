@@ -158,7 +158,7 @@ int si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrengt
     uint8_t divBy4 = 0;
     int32_t P1, P2, P3; // Multisynth config registers
 
-    if((phaseOffset != 0) && ((div < 8) || ((div == 8) && (num == 0)))) {
+    if((!conf->allowIntegerMode) && ((div < 8) || ((div == 8) && (num == 0)))) {
         // User tries to use phaseOffset with an integer divider in {4, 6, 8}
         // which is not supported by Si5351
         return 1;
@@ -177,7 +177,7 @@ int si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrengt
         P3 = denom;
     }
 
-    // Get the appropriate base address for the MS registers
+    // Get the register addresses for given channel
     uint8_t baseaddr = 0;
     uint8_t phaseOffsetRegister = 0;
     uint8_t clkControlRegister = 0;
@@ -199,9 +199,6 @@ int si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrengt
         break;
     }
 
-    si5351_write(phaseOffsetRegister, phaseOffset);
-    si5351_writeBulk(baseaddr, P1, P2, P3, divBy4, conf->rdiv);
-
     // Configure the clk control and enable the output
     uint8_t clkControl = 0x0C | driveStrength; // clock not inverted, powered up
     if(pllSource == SI5351_PLL_B) {
@@ -209,12 +206,15 @@ int si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrengt
     }
 
     // integer mode can't be used with phase offset
-    if((phaseOffset == 0) && ((num == 0)||(div == 4))) {
+    if((conf->allowIntegerMode) && ((num == 0)||(div == 4))) {
         // use integer mode
         clkControl |= (1 << 6);
     }
 
     si5351_write(clkControlRegister, clkControl);
+    si5351_writeBulk(baseaddr, P1, P2, P3, divBy4, conf->rdiv);
+    si5351_write(phaseOffsetRegister, (phaseOffset & 0x7F));
+
     return 0;
 }
 
@@ -223,6 +223,8 @@ int si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrengt
 void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t* out_conf) {
     if(Fclk < 8000) Fclk = 8000;
     if(Fclk > 160000000) Fclk = 160000000;
+
+    out_conf->allowIntegerMode = 1;
 
     if(Fclk < 1000000) {
         // For frequencies in [8_000, 500_000] range we can use si5351_Calc(Fclk*64, ...) and SI5351_R_DIV_64.
@@ -295,6 +297,38 @@ void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t
     out_conf->div = x;
     out_conf->num = y;
     out_conf->denom = z;
+}
+
+// si5351_CalcIQ() finds PLL and MS parameters that give phase shift 90° between two channels,
+// if 0 and (uint8_t)out_conf.div are passed as phaseOffset for these channels. Channels should
+// use the same PLL to make it work. Fclk can be from 3.5 MHz to 100 MHz. The actual frequency will
+// differ less than 4 Hz from given Fclk, assuming `correction` is right.
+void si5351_CalcIQ(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t* out_conf) {
+    const int32_t Fxtal = 25000000;
+    int32_t Fpll;
+
+    if(Fclk < 3500000) Fclk = 3500000;
+    if(Fclk > 100000000) Fclk = 100000000;
+
+    out_conf->allowIntegerMode = 0;
+    // it's impossible to get phase shift > 45° when RDivider is used
+    out_conf->rdiv = 0;
+
+    if(Fclk < 4900000) {
+        // dirty hack, run PLL below 600 MHz to cover 3.5 MHz .. 4.9 MHz range
+        out_conf->div = 420000000 / Fclk;
+    } else if(Fclk < 8000000) {
+        out_conf->div = 620000000 / Fclk;
+    } else {
+        out_conf->div = 900000000 / Fclk;
+    }
+    out_conf->num = 0;
+    out_conf->denom = 1;
+
+    Fpll = Fclk * out_conf->div;
+    pll_conf->mult = Fpll / Fxtal;
+    pll_conf->num = (Fpll % Fxtal) / 24;
+    pll_conf->denom = Fxtal / 24; // denom can't exceed 0xFFFFF
 }
 
 // Setup CLK0 for given frequency and drive strength. Use PLLA.

@@ -371,6 +371,41 @@ void init() {
 		LCD_Clear();
 	}
 
+	// --- debug code
+	/*
+	HAL_Delay(500); // make sure si5351 had time to initialize
+	LCD_Goto(0, 0);
+    LCD_SendString("IQ TEST");
+
+    si5351_Init(si5351_correction);
+	si5351PLLConfig_t pll_conf;
+	si5351OutputConfig_t out_conf;
+
+	si5351_CalcIQ(10000000, &pll_conf, &out_conf);
+
+	uint8_t phaseOffset = (uint8_t)out_conf.div;
+	char buff[32];
+	LCD_Goto(1, 0);
+	snprintf(buff, sizeof(buff), "PLL A=%ld B=%ld C=%ld", pll_conf.mult, pll_conf.num, pll_conf.denom);
+	LCD_SendString(buff);
+	LCD_Goto(2, 0);
+	snprintf(buff, sizeof(buff), "MS X=%ld Y=%ld Z=%ld", out_conf.div, out_conf.num, out_conf.denom);
+	LCD_SendString(buff);
+	LCD_Goto(3, 0);
+	snprintf(buff, sizeof(buff), "   r=%d I=%d", out_conf.rdiv, out_conf.allowIntegerMode);
+	LCD_SendString(buff);
+
+	si5351_EnableOutputs(0);
+	si5351_SetupOutput(0, SI5351_PLL_A, SI5351_DRIVE_STRENGTH_8MA, &out_conf, 0);
+	si5351_SetupOutput(2, SI5351_PLL_A, SI5351_DRIVE_STRENGTH_8MA, &out_conf, phaseOffset);
+	si5351_SetupPLL(SI5351_PLL_A, &pll_conf);
+	si5351_EnableOutputs((1<<0) | (1<<2));
+    while(1) {
+    	HAL_Delay(100);
+    }
+	*/
+    // --- end of debug code
+
     LCD_Goto(0, 0);
     LCD_SendString("   STM32 & Si5351   ");
     LCD_Goto(1, 0);
