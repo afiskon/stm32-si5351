@@ -90,7 +90,7 @@ static void MX_I2C1_Init(void);
 
 #define CLK0 0
 #define CLK2 2
-const int32_t si5351_correction = 5323;
+const int32_t si5351_correction = 5272;
 
 typedef enum {
 	CURSOR_CHANGING_FREQUENCY = 0,
