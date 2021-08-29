@@ -310,18 +310,20 @@ void si5351_CalcIQ(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig
     if(Fclk < 3500000) Fclk = 3500000;
     if(Fclk > 100000000) Fclk = 100000000;
 
-    // Apply correction
+    // apply correction
     Fclk = Fclk - ((Fclk/1000000)*si5351Correction)/100;
 
+    // disable integer mode
     out_conf->allowIntegerMode = 0;
+
     // it's impossible to get phase shift > 45° when RDivider is used
     out_conf->rdiv = 0;
 
     if(Fclk < 4900000) {
-        // dirty hack, run PLL below 600 MHz to cover 3.5 MHz .. 4.9 MHz range
-        out_conf->div = 420000000 / Fclk;
+        // dirty hack, run PLL below 600 MHz to cover 3.5 MHz .. 4.725 MHz range
+        out_conf->div = 127;
     } else if(Fclk < 8000000) {
-        out_conf->div = 620000000 / Fclk;
+        out_conf->div = 625000000 / Fclk;
     } else {
         out_conf->div = 900000000 / Fclk;
     }

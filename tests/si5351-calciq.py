@@ -7,7 +7,7 @@ import sys
 def si5351_iqmode(Fclk):
     # There are no solution above 100 MHz without using integer mode,
     # which is not supported when phase shift is enabled.
-    if Fclk < 3_500_000 or Fclk >= 100_000_000:
+    if Fclk < 3_500_000 or Fclk > 100_000_000:
         return None
 
     # it's  impossible to get phase shift > 45° when RDivider is used
@@ -18,15 +18,15 @@ def si5351_iqmode(Fclk):
     Mmin, Mmax = 8, 1800
 
     dirty_hack = False
-    Fpll_estimate = 900_000_000
     if Fclk < 4_900_000:
-        # dirty hack, run PLL below 600 MHz to cover 3.5 MHz .. 4.9 MHz range
+        # dirty hack, run PLL below 600 MHz to cover 3.5 MHz .. 4.725 MHz range
         dirty_hack = True
-        Fpll_estimate = 420_000_000
+        PhOff = 127
     elif Fclk < 8_000_000: # will find a solution for Fclk in 4.9..8 MHz range
-        Fpll_estimate = 620_000_000
+        PhOff = floor(625_000_000 / Fclk)
+    else:
+        PhOff = floor(900_000_000 / Fclk)
 
-    PhOff = floor(Fpll_estimate / Fclk)
     if PhOff > 127:
       print("Constraint violation: PhOff = {}".format(PhOff))
       return None
