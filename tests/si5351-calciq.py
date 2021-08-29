@@ -32,6 +32,9 @@ def si5351_iqmode(Fclk):
       return None
 
     Fpll = Fclk*PhOff
+    if not dirty_hack and (Fpll < 600_000_000 or Fpll > 900_000_000):
+        print("Constraint violation: Fpll = {}".format(Fpll))
+        return None
 
     A = floor(Fpll / Fxtal)
     B = floor((Fpll % Fxtal) / 24)
