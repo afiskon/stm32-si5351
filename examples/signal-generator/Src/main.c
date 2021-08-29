@@ -207,6 +207,7 @@ typedef struct {
 } ChannelState_t;
 
 int32_t currentCursorState = 0;
+uint8_t modeIQenabled = 0;
 ChannelState_t currentChannelStates[2] = {
 	{
 		.frequency = 10000000,
@@ -221,13 +222,17 @@ ChannelState_t currentChannelStates[2] = {
 void displayCurrentChannelStates() {
 	char buff[16];
 	for(int i = 0; i < 2; i++) {
-		snprintf(buff, sizeof(buff), "%03ld.%03ld.%03ld",
-			currentChannelStates[i].frequency / 1000000,
-			(currentChannelStates[i].frequency / 1000) % 1000,
-			currentChannelStates[i].frequency % 1000);
 		LCD_Goto(i*2, 9);
-		LCD_SendString(buff);
-
+		if((i == 1) && modeIQenabled) {
+			LCD_SendString("=CH1+90\xDF   ");
+		} else {
+			snprintf(buff, sizeof(buff), "%03ld.%03ld.%03ld",
+				currentChannelStates[i].frequency / 1000000,
+				(currentChannelStates[i].frequency / 1000) % 1000,
+				currentChannelStates[i].frequency % 1000);
+			LCD_SendString(buff);
+		}
+		
 		LCD_Goto(i*2 + 1, 9);
 		if(!POWER_STATES[currentChannelStates[i].powerState].enabled) {
 			LCD_SendString("OFF");
@@ -250,13 +255,22 @@ void updateSi5351Parameters() {
 
     si5351_EnableOutputs(0);
 
-	si5351_Calc(currentChannelStates[0].frequency, &pll_conf, &out_conf);
-	si5351_SetupPLL(SI5351_PLL_A, &pll_conf);
-	si5351_SetupOutput(0, SI5351_PLL_A, POWER_STATES[currentChannelStates[0].powerState].driveStrength, &out_conf, 0);
+    if(modeIQenabled) {
+		si5351_CalcIQ(currentChannelStates[0].frequency, &pll_conf, &out_conf);
 
-	si5351_Calc(currentChannelStates[1].frequency, &pll_conf, &out_conf);
-	si5351_SetupPLL(SI5351_PLL_B, &pll_conf);
-	si5351_SetupOutput(2, SI5351_PLL_B, POWER_STATES[currentChannelStates[1].powerState].driveStrength, &out_conf, 0);
+		uint8_t phaseOffset = (uint8_t)out_conf.div;
+		si5351_SetupOutput(0, SI5351_PLL_A, POWER_STATES[currentChannelStates[0].powerState].driveStrength, &out_conf, 0);
+		si5351_SetupOutput(2, SI5351_PLL_A, POWER_STATES[currentChannelStates[1].powerState].driveStrength, &out_conf, phaseOffset);
+		si5351_SetupPLL(SI5351_PLL_A, &pll_conf);
+    } else {
+		si5351_Calc(currentChannelStates[0].frequency, &pll_conf, &out_conf);
+		si5351_SetupOutput(0, SI5351_PLL_A, POWER_STATES[currentChannelStates[0].powerState].driveStrength, &out_conf, 0);
+		si5351_SetupPLL(SI5351_PLL_A, &pll_conf);
+
+		si5351_Calc(currentChannelStates[1].frequency, &pll_conf, &out_conf);
+		si5351_SetupOutput(2, SI5351_PLL_B, POWER_STATES[currentChannelStates[1].powerState].driveStrength, &out_conf, 0);
+		si5351_SetupPLL(SI5351_PLL_B, &pll_conf);
+	}
 
 	if(POWER_STATES[currentChannelStates[0].powerState].enabled) {
 		enabledOutputs |= (1 << CLK0);
@@ -371,41 +385,6 @@ void init() {
 		LCD_Clear();
 	}
 
-	// --- debug code
-	/*
-	HAL_Delay(500); // make sure si5351 had time to initialize
-	LCD_Goto(0, 0);
-    LCD_SendString("IQ TEST");
-
-    si5351_Init(si5351_correction);
-	si5351PLLConfig_t pll_conf;
-	si5351OutputConfig_t out_conf;
-
-	si5351_CalcIQ(10000000, &pll_conf, &out_conf);
-
-	uint8_t phaseOffset = (uint8_t)out_conf.div;
-	char buff[32];
-	LCD_Goto(1, 0);
-	snprintf(buff, sizeof(buff), "PLL A=%ld B=%ld C=%ld", pll_conf.mult, pll_conf.num, pll_conf.denom);
-	LCD_SendString(buff);
-	LCD_Goto(2, 0);
-	snprintf(buff, sizeof(buff), "MS X=%ld Y=%ld Z=%ld", out_conf.div, out_conf.num, out_conf.denom);
-	LCD_SendString(buff);
-	LCD_Goto(3, 0);
-	snprintf(buff, sizeof(buff), "   r=%d I=%d", out_conf.rdiv, out_conf.allowIntegerMode);
-	LCD_SendString(buff);
-
-	si5351_EnableOutputs(0);
-	si5351_SetupOutput(0, SI5351_PLL_A, SI5351_DRIVE_STRENGTH_8MA, &out_conf, 0);
-	si5351_SetupOutput(2, SI5351_PLL_A, SI5351_DRIVE_STRENGTH_8MA, &out_conf, phaseOffset);
-	si5351_SetupPLL(SI5351_PLL_A, &pll_conf);
-	si5351_EnableOutputs((1<<0) | (1<<2));
-    while(1) {
-    	HAL_Delay(100);
-    }
-	*/
-    // --- end of debug code
-
     LCD_Goto(0, 0);
     LCD_SendString("   STM32 & Si5351   ");
     LCD_Goto(1, 0);
@@ -434,6 +413,7 @@ void init() {
 }
 
 void loop() {
+	static uint32_t lastModeChangeTime = 0;
 	uint32_t now = HAL_GetTick();
 	int32_t delta = getRotaryEncoderDelta();
 
@@ -442,10 +422,18 @@ void loop() {
 		switch(CURSOR_STATES[currentCursorState].changing) {
 		case CURSOR_CHANGING_FREQUENCY:
 			currentChannelStates[ch].frequency += delta*CURSOR_STATES[currentCursorState].frequencyStep;
-			if(currentChannelStates[ch].frequency < 8000) {
-				currentChannelStates[ch].frequency = 8000;
-			} else if(currentChannelStates[ch].frequency > 160000000) {
-				currentChannelStates[ch].frequency = 160000000;
+			if(modeIQenabled) {
+				if(currentChannelStates[ch].frequency < 3500000) {
+					currentChannelStates[ch].frequency = 3500000;
+				} else if(currentChannelStates[ch].frequency > 100000000) {
+					currentChannelStates[ch].frequency = 100000000;
+				}
+			} else {
+				if(currentChannelStates[ch].frequency < 8000) {
+					currentChannelStates[ch].frequency = 8000;
+				} else if(currentChannelStates[ch].frequency > 160000000) {
+					currentChannelStates[ch].frequency = 160000000;
+				}
 			}
 			break;
 		case CURSOR_CHANGING_POWER:
@@ -463,7 +451,7 @@ void loop() {
 		displayCurrentChannelStates();
 	}
 
-	if(buttonRotEncoderPressed(now) == BUTTON_PRESSED) {
+	if(!modeIQenabled && (buttonRotEncoderPressed(now) == BUTTON_PRESSED)) {
 		int32_t threshold = (sizeof(CURSOR_STATES)/sizeof(CURSOR_STATES[0])) / 2;
 		if(currentCursorState >= threshold) {
 			currentCursorState -= threshold;
@@ -472,18 +460,45 @@ void loop() {
 		}
 	}
 
-	if(buttonLeftPressed(now) == BUTTON_PRESSED) {
-		currentCursorState--;
-	} else if(buttonRightPressed(now) == BUTTON_PRESSED) {
-		currentCursorState++;
-	}
+	if(buttonLeftPressedSimple() && buttonRightPressedSimple() && (now - lastModeChangeTime > BUTTON_DEBOUNCE_TIME_MS)) {
+		modeIQenabled = !modeIQenabled;
+		currentChannelStates[0].powerState = 0; // turn OFF both channels
+		currentChannelStates[1].powerState = 0;
+		lastModeChangeTime = now;
 
-	if(currentCursorState < 0) {
-		currentCursorState = sizeof(CURSOR_STATES)/sizeof(CURSOR_STATES[0]) - 1;
-	}
+		if(modeIQenabled) {
+			currentCursorState = 0;
 
-	if(currentCursorState >= sizeof(CURSOR_STATES)/sizeof(CURSOR_STATES[0])) {
-		currentCursorState = 0;
+			if(currentChannelStates[0].frequency < 3500000) {
+				currentChannelStates[0].frequency = 3500000;
+			} else if(currentChannelStates[0].frequency > 100000000) {
+				currentChannelStates[0].frequency = 100000000;
+			}
+		}
+
+		updateSi5351Parameters();
+		displayCurrentChannelStates();
+	} else {
+		uint8_t leftPressed = (buttonLeftPressed(now) == BUTTON_PRESSED);
+		uint8_t rightPressed = (buttonRightPressed(now) == BUTTON_PRESSED);
+
+		do {
+			if(leftPressed) {
+				currentCursorState--;
+			} else if(rightPressed) {
+				currentCursorState++;
+			}
+
+			if(currentCursorState < 0) {
+				currentCursorState = sizeof(CURSOR_STATES)/sizeof(CURSOR_STATES[0]) - 1;
+			}
+
+			if(currentCursorState >= sizeof(CURSOR_STATES)/sizeof(CURSOR_STATES[0])) {
+				currentCursorState = 0;
+			}
+		} while(modeIQenabled &&
+			(CURSOR_STATES[currentCursorState].channel == 1) && 
+			(CURSOR_STATES[currentCursorState].changing == CURSOR_CHANGING_FREQUENCY));
 	}
 
 	LCD_Goto(CURSOR_STATES[currentCursorState].y, CURSOR_STATES[currentCursorState].x);
