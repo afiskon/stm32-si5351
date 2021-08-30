@@ -219,7 +219,7 @@ int si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrengt
 // The actual frequency will differ less than 6 Hz from given Fclk, assuming `correction` is right.
 void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t* out_conf) {
     if(Fclk < 8000) Fclk = 8000;
-    if(Fclk > 160000000) Fclk = 160000000;
+    else if(Fclk > 160000000) Fclk = 160000000;
 
     out_conf->allowIntegerMode = 1;
 
@@ -304,8 +304,8 @@ void si5351_CalcIQ(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig
     const int32_t Fxtal = 25000000;
     int32_t Fpll;
 
-    if(Fclk < 3500000) Fclk = 3500000;
-    if(Fclk > 100000000) Fclk = 100000000;
+    if(Fclk < 1400000) Fclk = 1400000;
+    else if(Fclk > 100000000) Fclk = 100000000;
 
     // apply correction
     Fclk = Fclk - ((Fclk/1000000)*si5351Correction)/100;
@@ -313,11 +313,18 @@ void si5351_CalcIQ(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig
     // disable integer mode
     out_conf->allowIntegerMode = 0;
 
-    // it's impossible to get phase shift > 45° when RDivider is used
+    // In theory, dividing the frequency of two signals with 90° phase shift by two
+    // should produce two signals with 90° phase shift and lower frequency.
+    // However this is not how Si5351 works. It's impossible to get a proper phase
+    // shift when RDivider's are used. AN619 doesn't give any guarantees regarding
+    // the way RDivider's affect the phase shift. Experimentally I was unable to get
+    // phase shift > 45°.
     out_conf->rdiv = 0;
 
     if(Fclk < 4900000) {
-        // dirty hack, run PLL below 600 MHz to cover 3.5 MHz .. 4.725 MHz range
+        // dirty hack, run PLL below 600 MHz to cover 1.4 MHz .. 4.725 MHz range
+        // experiments showed that PLL gets unstable when you run it below 177 MHz
+        // which limits Fclk to 177 / 127 = 1.4 MHz
         out_conf->div = 127;
     } else if(Fclk < 8000000) {
         out_conf->div = 625000000 / Fclk;

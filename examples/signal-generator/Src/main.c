@@ -423,8 +423,8 @@ void loop() {
 		case CURSOR_CHANGING_FREQUENCY:
 			currentChannelStates[ch].frequency += delta*CURSOR_STATES[currentCursorState].frequencyStep;
 			if(modeIQenabled) {
-				if(currentChannelStates[ch].frequency < 3500000) {
-					currentChannelStates[ch].frequency = 3500000;
+				if(currentChannelStates[ch].frequency < 1400000) {
+					currentChannelStates[ch].frequency = 1400000;
 				} else if(currentChannelStates[ch].frequency > 100000000) {
 					currentChannelStates[ch].frequency = 100000000;
 				}
@@ -469,8 +469,8 @@ void loop() {
 		if(modeIQenabled) {
 			currentCursorState = 0;
 
-			if(currentChannelStates[0].frequency < 3500000) {
-				currentChannelStates[0].frequency = 3500000;
+			if(currentChannelStates[0].frequency < 1400000) {
+				currentChannelStates[0].frequency = 1400000;
 			} else if(currentChannelStates[0].frequency > 100000000) {
 				currentChannelStates[0].frequency = 100000000;
 			}
