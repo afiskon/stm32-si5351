@@ -298,7 +298,7 @@ void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t
 
 // si5351_CalcIQ() finds PLL and MS parameters that give phase shift 90° between two channels,
 // if 0 and (uint8_t)out_conf.div are passed as phaseOffset for these channels. Channels should
-// use the same PLL to make it work. Fclk can be from 3.5 MHz to 100 MHz. The actual frequency will
+// use the same PLL to make it work. Fclk can be from 1.4 MHz to 100 MHz. The actual frequency will
 // differ less than 4 Hz from given Fclk, assuming `correction` is right.
 void si5351_CalcIQ(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t* out_conf) {
     const int32_t Fxtal = 25000000;
