@@ -314,7 +314,7 @@ void si5351_CalcIQ(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig
     // disable integer mode
     out_conf->allowIntegerMode = 0;
 
-    // Using RDivider's change the phase shift and AN619 doesn't give any
+    // Using RDivider's changes the phase shift and AN619 doesn't give any
     // guarantees regarding this change.
     out_conf->rdiv = 0;
 
