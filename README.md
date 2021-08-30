@@ -56,7 +56,7 @@ si5351_CalcIQ(Fclk, &pll_conf, &out_conf);
  * Please see AN619 for more details.
  *
  * si5351_CalcIQ() chooses PLL and MS parameters so that:
- *   Fclk in [3.5..100] MHz
+ *   Fclk in [1.4..100] MHz
  *   out_conf.div in [9..127]
  *   out_conf.num = 0
  *   out_conf.denum = 1

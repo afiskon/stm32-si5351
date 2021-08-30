@@ -1,10 +1,9 @@
 // vim: set ai et ts=4 sw=4:
 
-// change for your chip
+// change for your MCU
 #include "stm32f1xx_hal.h"
-#include <si5351.h>
 
-// change if necessary
+#include <si5351.h>
 #define SI5351_ADDRESS 0x60
 #define I2C_HANDLE hi2c1
 extern I2C_HandleTypeDef I2C_HANDLE;
@@ -155,10 +154,13 @@ int si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrengt
     uint8_t divBy4 = 0;
     int32_t P1, P2, P3; // Multisynth config registers
 
-    if((!conf->allowIntegerMode) && ((div < 8) || ((div == 8) && (num == 0)))) {
-        // User tries to use phaseOffset with an integer divider in {4, 6, 8}
-        // which is not supported by Si5351
+    if(output > 2) {
         return 1;
+    }
+
+    if((!conf->allowIntegerMode) && ((div < 8) || ((div == 8) && (num == 0)))) {
+        // div in { 4, 6, 8 } is possible only in integer mode
+        return 2;
     }
 
     if(div == 4) {
@@ -202,7 +204,6 @@ int si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrengt
         clkControl |= (1 << 5); // Uses PLLB
     }
 
-    // integer mode can't be used with phase offset
     if((conf->allowIntegerMode) && ((num == 0)||(div == 4))) {
         // use integer mode
         clkControl |= (1 << 6);
@@ -313,18 +314,14 @@ void si5351_CalcIQ(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig
     // disable integer mode
     out_conf->allowIntegerMode = 0;
 
-    // In theory, dividing the frequency of two signals with 90° phase shift by two
-    // should produce two signals with 90° phase shift and lower frequency.
-    // However this is not how Si5351 works. It's impossible to get a proper phase
-    // shift when RDivider's are used. AN619 doesn't give any guarantees regarding
-    // the way RDivider's affect the phase shift. Experimentally I was unable to get
-    // phase shift > 45°.
+    // Using RDivider's change the phase shift and AN619 doesn't give any
+    // guarantees regarding this change.
     out_conf->rdiv = 0;
 
     if(Fclk < 4900000) {
-        // dirty hack, run PLL below 600 MHz to cover 1.4 MHz .. 4.725 MHz range
-        // experiments showed that PLL gets unstable when you run it below 177 MHz
-        // which limits Fclk to 177 / 127 = 1.4 MHz
+        // Dirty hack, run PLL below 600 MHz to cover 1.4 MHz .. 4.725 MHz range.
+        // Experiments showed that PLL gets unstable when you run it below 177 MHz,
+        // which limits Fclk to 177 / 127 = 1.4 MHz.
         out_conf->div = 127;
     } else if(Fclk < 8000000) {
         out_conf->div = 625000000 / Fclk;
