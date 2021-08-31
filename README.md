@@ -80,4 +80,4 @@ si5351_EnableOutputs((1<<0) | (1<<2));
 
 More comments are in the code. See also examples/ directory.
 
-This library was forked from [ProjectsByJRP/si5351-stm32](https://github.com/ProjectsByJRP/si5351-stm32) which in it's turn is a port of [adafruit/Adafruit_Si5351_Library](https://github.com/adafruit/Adafruit_Si5351_Library).
+This library was forked from [ProjectsByJRP/si5351-stm32](https://github.com/ProjectsByJRP/si5351-stm32) which in it's turn is a port of [adafruit/Adafruit_Si5351_Library](https://github.com/adafruit/Adafruit_Si5351_Library). Both libraries are licensed under BSD.
