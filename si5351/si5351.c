@@ -12,7 +12,7 @@ extern I2C_HandleTypeDef I2C_HANDLE;
 void si5351_writeBulk(uint8_t baseaddr, int32_t P1, int32_t P2, int32_t P3, uint8_t divBy4, si5351RDiv_t rdiv);
 void si5351_write(uint8_t reg, uint8_t value);
 
-// See http://www.silabs.com/Support%20Documents/TechnicalDocs/AN619.pdf for registers 26..41
+// See http://www.silabs.com/Support%20Documents/TechnicalDocs/AN619.pdf
 enum {
     SI5351_REGISTER_0_DEVICE_STATUS                       = 0,
     SI5351_REGISTER_1_INTERRUPT_STATUS_STICKY             = 1,
@@ -99,14 +99,16 @@ typedef enum {
 
 int32_t si5351Correction;
 
-// Initializes Si5351. Call this function before doing anything else.
-// `Correction` is the difference of actual frequency an desired frequency @ 100 Megs.
-// It can be measured at lower frequencies and scaled linearly.
-// E.g. if you get 10_000_097 Hz instead of 10_000_000 Hz, `correction` is 97*10 = 970
+/*
+ * Initializes Si5351. Call this function before doing anything else.
+ * `Correction` is the difference of actual frequency an desired frequency @ 100 MHz.
+ * It can be measured at lower frequencies and scaled linearly.
+ * E.g. if you get 10_000_097 Hz instead of 10_000_000 Hz, `correction` is 97*10 = 970
+ */
 void si5351_Init(int32_t correction) {
     si5351Correction = correction;
 
-    // Disable all outputs setting CLKx_DIS high
+    // Disable all outputs by setting CLKx_DIS high
     si5351_write(SI5351_REGISTER_3_OUTPUT_ENABLE_CONTROL, 0xFF);
 
     // Power down all output drivers
@@ -124,14 +126,13 @@ void si5351_Init(int32_t correction) {
     si5351_write(SI5351_REGISTER_183_CRYSTAL_INTERNAL_LOAD_CAPACITANCE, crystalLoad);
 }
 
-// Sets the multiplier for given PLL. See AN619.
+// Sets the multiplier for given PLL
 void si5351_SetupPLL(si5351PLL_t pll, si5351PLLConfig_t* conf) {
-    int32_t P1, P2, P3; // PLL config registers
+    int32_t P1, P2, P3;
     int32_t mult = conf->mult;
     int32_t num = conf->num;
     int32_t denom = conf->denom;
 
-    // Set the main PLL config registers
     P1 = 128 * mult + (128 * num)/denom - 512;
     // P2 = 128 * num - denom * ((128 * num)/denom);
     P2 = (128 * num) % denom;
@@ -145,14 +146,14 @@ void si5351_SetupPLL(si5351PLL_t pll, si5351PLLConfig_t* conf) {
     si5351_write(SI5351_REGISTER_177_PLL_RESET, (1<<7) | (1<<5) );
 }
 
-// Configures PLL source, drive strength, multisynth divider and Rdivider. See AN619.
+// Configures PLL source, drive strength, multisynth divider, Rdivider and phaseOffset.
 // Returns 0 on success, != 0 otherwise.
 int si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrength_t driveStrength, si5351OutputConfig_t* conf, uint8_t phaseOffset) {
     int32_t div = conf->div;
     int32_t num = conf->num;
     int32_t denom = conf->denom;
     uint8_t divBy4 = 0;
-    int32_t P1, P2, P3; // Multisynth config registers
+    int32_t P1, P2, P3;
 
     if(output > 2) {
         return 1;
@@ -198,7 +199,6 @@ int si5351_SetupOutput(uint8_t output, si5351PLL_t pllSource, si5351DriveStrengt
         break;
     }
 
-    // Configure the clk control and enable the output
     uint8_t clkControl = 0x0C | driveStrength; // clock not inverted, powered up
     if(pllSource == SI5351_PLL_B) {
         clkControl |= (1 << 5); // Uses PLLB
@@ -226,7 +226,7 @@ void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t
 
     if(Fclk < 1000000) {
         // For frequencies in [8_000, 500_000] range we can use si5351_Calc(Fclk*64, ...) and SI5351_R_DIV_64.
-        // In practice it's worth doing for any frequency below 1 Meg, since it reduces the error.
+        // In practice it's worth doing for any frequency below 1 MHz, since it reduces the error.
         Fclk *= 64;
         out_conf->rdiv = SI5351_R_DIV_64;
     } else {
@@ -245,16 +245,16 @@ void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t
     // b < c, y < z
     // b,c,y,z <= 2**20
     // c, z != 0
-    // For any Fclk in [500K, 160Meg] this algorithm finds a solution
+    // For any Fclk in [500K, 160MHz] this algorithm finds a solution
     // such as abs(Ffound - Fclk) <= 6 Hz
 
     const int32_t Fxtal = 25000000;
     int32_t a, b, c, x, y, z, t;
 
     if(Fclk < 81000000) {
-        // Valid for Fclk in 0.5..112.5 Meg range
-        // However an error is > 6 Hz above 81 Megs
-        a = 36; // PLL runs @ 900 Meg
+        // Valid for Fclk in 0.5..112.5 MHz range
+        // However an error is > 6 Hz above 81 MHz
+        a = 36; // PLL runs @ 900 MHz
         b = 0;
         c = 1;
         int32_t Fpll = 900000000;
@@ -267,7 +267,7 @@ void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t
         y = (Fpll % Fclk) / t;
         z = Fclk / t;
     } else {
-        // Valid for Fclk in 75..160 Meg range
+        // Valid for Fclk in 75..160 MHz range
         if(Fclk >= 150000000) {
             x = 4;
         } else if (Fclk >= 100000000) {
@@ -319,7 +319,8 @@ void si5351_CalcIQ(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig
     out_conf->rdiv = 0;
 
     if(Fclk < 4900000) {
-        // Dirty hack, run PLL below 600 MHz to cover 1.4 MHz .. 4.725 MHz range.
+        // Little hack, run PLL below 600 MHz to cover 1.4 MHz .. 4.725 MHz range.
+        // AN619 doesn't literally say that PLL can't run below 600 MHz.
         // Experiments showed that PLL gets unstable when you run it below 177 MHz,
         // which limits Fclk to 177 / 127 = 1.4 MHz.
         out_conf->div = 127;
@@ -362,7 +363,6 @@ void si5351_SetupCLK2(int32_t Fclk, si5351DriveStrength_t driveStrength) {
 // si5351_EnableOutputs(1 << 0) enables CLK0 and disables CLK1 and CLK2
 // si5351_EnableOutputs((1 << 2) | (1 << 0)) enables CLK0 and CLK2 and disables CLK1
 void si5351_EnableOutputs(uint8_t enabled) {
-    // see Register 3 in the datasheet
     si5351_write(SI5351_REGISTER_3_OUTPUT_ENABLE_CONTROL, ~enabled);
 }
 

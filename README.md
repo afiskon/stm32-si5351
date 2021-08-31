@@ -63,9 +63,6 @@ si5351_CalcIQ(Fclk, &pll_conf, &out_conf);
  *   Fpll = out_conf.div * Fclk.
  * This automatically gives 90° phase shift between two channels if you pass
  * 0 and out_conf.div as a phaseOffset for these channels.
- *
- * Note that PLL will run below 600 MHz to cover 1.4 MHz .. 4.725 MHz range. This
- * contradicts the datasheet but seems to work fine in practice.
  */
 uint8_t phaseOffset = (uint8_t)out_conf.div;
 si5351_SetupOutput(0, SI5351_PLL_A, SI5351_DRIVE_STRENGTH_4MA, &out_conf, 0);

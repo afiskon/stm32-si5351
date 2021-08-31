@@ -39,31 +39,37 @@ typedef struct {
     si5351RDiv_t rdiv;
 } si5351OutputConfig_t;
 
-// Basic interface allows to use only CLK0 and CLK2.
-// This interface uses separate PLLs for both CLK0 and CLK2 thus the frequencies
-// can be changed independelty. If you also need CLK1 one PLL should
-// be shared between two CLKx and things get a little more complicated.
-// CLK0 and CLK2 were chosen because they are distant from each other on a common
-// Si5351 module. This makes using them a little more convenient than CLK0 and CLK1.
+/*
+ * Basic interface allows to use only CLK0 and CLK2.
+ * This interface uses separate PLLs for both CLK0 and CLK2 thus the frequencies
+ * can be changed independently. If you also need CLK1 one PLL should
+ * be shared between two CLKx and things get a little more complicated.
+ * CLK0 and CLK2 were chosen because they are distant from each other on a common
+ * Si5351 module. This makes using them a little more convenient than CLK0 and CLK1.
+ */
 void si5351_Init(int32_t correction);
 void si5351_SetupCLK0(int32_t Fclk, si5351DriveStrength_t driveStrength);
 void si5351_SetupCLK2(int32_t Fclk, si5351DriveStrength_t driveStrength);
 void si5351_EnableOutputs(uint8_t enabled);
 
-// Advanced interface. Use it if you need:
-//
-// a. CLK0, CLK1 and CLK2 simultaneously;
-// b. A phase shift 90° between two channels;
-//
-// si5351_Calc() always uses 900 MHz PLL for frequencies below 81 MHz.
-// This PLL can safely be shared between all CLKx that work @ <= 81 MHz.
-// You can also modify si5351.c to share one PLL for any frequencies <= 112.5 MHz,
-// however this will increase the worse case calculation error to 13 Hz.
+/*
+ * Advanced interface. Use it if you need:
+ *
+ * a. CLK0, CLK1 and CLK2 simultaneously;
+ * b. A phase shift 90° between two channels;
+ *
+ * si5351_Calc() always uses 900 MHz PLL for frequencies below 81 MHz.
+ * This PLL can safely be shared between all CLKx that work @ <= 81 MHz.
+ * You can also modify si5351.c to share one PLL for any frequencies <= 112.5 MHz,
+ * however this will increase the worse case calculation error to 13 Hz.
+ */
 void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t* out_conf);
 
-// si5351_CalcIQ() finds PLL and MS parameters that give phase shift 90° between two channels,
-// if 0 and (uint8_t)out_conf.div are passed as phaseOffset for these channels. Channels should
-// use the same PLL to make it work.
+/*
+ * si5351_CalcIQ() finds PLL and MS parameters that give phase shift 90° between two channels,
+ * if 0 and (uint8_t)out_conf.div are passed as phaseOffset for these channels. Channels should
+ * use the same PLL to make it work.
+ */
 void si5351_CalcIQ(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t* out_conf);
 
 void si5351_SetupPLL(si5351PLL_t pll, si5351PLLConfig_t* conf);
