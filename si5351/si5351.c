@@ -261,9 +261,7 @@ void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t
         x = Fpll/Fclk;
         // t = ceil(Fclk/0xFFFFF)
         t = Fclk >> 20;
-        if(Fclk & 0xFFFFF) {
-            t += 1;
-        }
+        t = (Fxtal >> 20) + 1;
         y = (Fpll % Fclk) / t;
         z = Fclk / t;
     } else {
@@ -282,9 +280,7 @@ void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t
         a = numerator/Fxtal;
         // t = ceil(Fxtal/0xFFFFF)
         t = Fxtal >> 20;
-        if(Fxtal & 0xFFFFF) {
-            t += 1;
-        }
+        t = (Fxtal >> 20) + 1;
         b = (numerator % Fxtal) / t;
         c = Fxtal / t;
     }
