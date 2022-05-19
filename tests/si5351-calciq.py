@@ -47,6 +47,10 @@ def si5351_iqmode(Fclk):
       print("Constraint violation: A = {}, X = {}, Y = {}".format(A, X, Y))
       return None
 
+    if B > 0xFFFFF or C == 0 or C > 0xFFFFF or Y > 0xFFFFF or Z == 0 or Z > 0xFFFFF:
+        print("Constraint violation: B = {}, C = {}, Y = {}, Z = {}".format(B, C, Y, Z))
+        return None
+        
     N = A+B/C
     M = X+Y/Z
     Fres = floor(Fxtal*N/(M * (1 << rdiv)))

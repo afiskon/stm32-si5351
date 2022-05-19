@@ -25,10 +25,7 @@ def si5351_calc(Fclk):
         C = 1
         Fpll = 900_000_000
         X = floor(Fpll/Fclk)
-        # T = ceil(Fclk/0xFFFFF)
-        T = Fclk >> 20
-        if Fclk & 0xFFFFF:
-            T += 1
+        T = (Fclk >> 20) + 1
         Y = floor((Fpll % Fclk) / T)
         Z = floor(Fclk/T)
     else:
@@ -43,15 +40,16 @@ def si5351_calc(Fclk):
         Z = 1
         Numerator = X*Fclk
         A = floor(Numerator/Fxtal)
-        # T = ceil(Fxtal/0xFFFFF)
-        T = Fxtal >> 20
-        if Fxtal & 0xFFFFF:
-            T += 1
+        T = (Fxtal >> 20) + 1
         B = floor((Numerator % Fxtal) / T)
         C = floor(Fxtal / T)
 
     if A < Nmin or A > Nmax or (X != 4 and X != 6 and not (X >= Mmin or X <= Mmax)):
         print("Constraint violation: A = {}, X = {}".format(A, X))
+        return None
+
+    if B > 0xFFFFF or C == 0 or C > 0xFFFFF or Y > 0xFFFFF or Z == 0 or Z > 0xFFFFF:
+        print("Constraint violation: B = {}, C = {}, Y = {}, Z = {}".format(B, C, Y, Z))
         return None
 
     N = A+B/C
