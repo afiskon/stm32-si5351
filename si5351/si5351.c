@@ -259,7 +259,7 @@ void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t
         c = 1;
         int32_t Fpll = 900000000;
         x = Fpll/Fclk;
-        t = (Fxtal >> 20) + 1;
+        t = (Fclk >> 20) + 1;
         y = (Fpll % Fclk) / t;
         z = Fclk / t;
     } else {
