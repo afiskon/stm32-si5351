@@ -234,7 +234,7 @@ void si5351_Calc(int32_t Fclk, si5351PLLConfig_t* pll_conf, si5351OutputConfig_t
     }
 
     // Apply correction, _after_ determining rdiv.
-    Fclk = Fclk - ((Fclk/1000000)*si5351Correction)/100;
+    Fclk = Fclk - (int32_t)((((double)Fclk)/100000000.0)*((double)si5351Correction));
 
     // Here we are looking for integer values of a,b,c,x,y,z such as:
     // N = a + b / c    # pll settings
