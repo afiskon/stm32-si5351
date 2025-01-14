@@ -1,6 +1,6 @@
 # STM32 & Si5351 Signal Generator
 
-A signal generator based in STM32F103 MCU, Si5351 and 2004 I2C LCD.
+A signal generator based on STM32F103 MCU, Si5351 and 2004 I2C LCD.
 
 MCU pinout:
 
